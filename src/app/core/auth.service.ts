@@ -1,5 +1,8 @@
-import { Injectable, computed, signal } from '@angular/core';
-import { cedulaFicticia, validarCedula } from './util';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { API_URL, CLAVE_TOKEN } from './api';
+import { cedulaFicticia, correoPermitido, requisitosClave, validarCedula } from './util';
 
 export type Rol = 'Administrador' | 'Recepción' | 'Fisioterapeuta' | 'Paciente';
 
@@ -33,6 +36,7 @@ export class AuthService {
   readonly CLAVE_DEMO = 'FisioNova2026!';
   readonly CODIGO_DEMO = '123456';
 
+  private readonly http = inject(HttpClient);
   private contador = 10;
 
   private readonly _cuentas = signal<Cuenta[]>([
@@ -56,6 +60,78 @@ export class AuthService {
 
   readonly usuario = signal<Usuario | null>(this.restaurar());
   readonly pendiente = signal<Cuenta | null>(null);
+
+  // ---------- conexión con la API (PostgreSQL) ----------
+  private tokenPendiente: string | null = null;
+  /** Personal que ya puso su contraseña y falta el segundo factor. */
+  readonly usuarioPendiente = signal<Usuario | null>(null);
+
+  private msgError(e: unknown): string {
+    const err = e as { error?: { error?: string } };
+    return err?.error?.error ?? 'No pudimos conectar con el servidor. Intenta de nuevo.';
+  }
+
+  /** Paso 1: cédula o correo + contraseña, validados por la API. Devuelve un error o null. */
+  async iniciarApi(identificador: string, clave: string): Promise<string | null> {
+    try {
+      const r = await firstValueFrom(
+        this.http.post<{ token: string; usuario: Usuario }>(`${API_URL}/login`, { identificador, clave }),
+      );
+      if (r.usuario.rol === 'Paciente') {
+        this.guardarSesion(r.usuario, r.token);
+      } else {
+        this.tokenPendiente = r.token;
+        this.usuarioPendiente.set(r.usuario);
+      }
+      return null;
+    } catch (e) {
+      return this.msgError(e);
+    }
+  }
+
+  /** Paso 2: segundo factor del personal. */
+  verificarApi(codigo: string): boolean {
+    const u = this.usuarioPendiente();
+    if (!u || !this.tokenPendiente || codigo.trim() !== this.CODIGO_DEMO) return false;
+    this.guardarSesion(u, this.tokenPendiente);
+    this.usuarioPendiente.set(null);
+    this.tokenPendiente = null;
+    return true;
+  }
+
+  cancelarVerificacionApi(): void {
+    this.usuarioPendiente.set(null);
+    this.tokenPendiente = null;
+  }
+
+  async registrarApi(d: {
+    nombre: string;
+    cedula: string;
+    correo: string;
+    telefono: string;
+    clave: string;
+    consentimiento: boolean;
+  }): Promise<string | null> {
+    try {
+      const r = await firstValueFrom(
+        this.http.post<{ token: string; usuario: Usuario }>(`${API_URL}/registro`, d),
+      );
+      this.guardarSesion(r.usuario, r.token);
+      return null;
+    } catch (e) {
+      return this.msgError(e);
+    }
+  }
+
+  private guardarSesion(u: Usuario, token: string): void {
+    this.usuario.set(u);
+    try {
+      sessionStorage.setItem('fisionova.usuario', JSON.stringify(u));
+      sessionStorage.setItem(CLAVE_TOKEN, token);
+    } catch {
+      /* sin almacenamiento: la sesión vive solo en memoria */
+    }
+  }
 
   /** Paso 1: cédula o correo más contraseña. Devuelve un mensaje genérico de error o null. */
   iniciar(identificador: string, clave: string): string | null {
@@ -99,8 +175,10 @@ export class AuthService {
   salir(): void {
     this.usuario.set(null);
     this.pendiente.set(null);
+    this.cancelarVerificacionApi();
     try {
       sessionStorage.removeItem('fisionova.usuario');
+      sessionStorage.removeItem(CLAVE_TOKEN);
     } catch {
       /* nada que limpiar */
     }
@@ -113,7 +191,8 @@ export class AuthService {
 
   /** RNF-01: 12 o más caracteres, sin contraseñas comunes ni datos personales. */
   validarClave(clave: string, cedula: string, correo: string): string | null {
-    if (clave.length < 12) return 'La contraseña debe tener al menos 12 caracteres.';
+    const falta = requisitosClave(clave).find((r) => !r.ok);
+    if (falta) return `La contraseña necesita: ${falta.texto.toLowerCase()}.`;
     const baja = clave.toLowerCase();
     if (CLAVES_COMUNES.includes(baja) || /^(.)\1+$/.test(clave)) return 'Esa contraseña es muy común. Elige otra.';
     const usuarioCorreo = correo.split('@')[0].toLowerCase();
@@ -155,7 +234,7 @@ export class AuthService {
     if (d.rol === 'Paciente') return 'Elige un rol del personal.';
     if (d.nombre.trim().length < 5) return 'Escribe el nombre completo.';
     if (!validarCedula(d.cedula)) return 'La cédula no es válida. Revisa los 10 dígitos.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.correo)) return 'Escribe un correo válido.';
+    if (!correoPermitido(d.correo, ['fisionova.ec'])) return 'Usa un correo de @fisionova.ec, Gmail u Outlook.';
     const cuentas = this._cuentas();
     if (cuentas.some((c) => c.cedula === d.cedula)) return 'Ya existe una cuenta con esa cédula.';
     if (cuentas.some((c) => c.correo.toLowerCase() === d.correo.trim().toLowerCase())) return 'Ya existe una cuenta con ese correo.';
@@ -199,11 +278,8 @@ export class AuthService {
   private restaurar(): Usuario | null {
     try {
       const raw = sessionStorage.getItem('fisionova.usuario');
-      if (!raw) return null;
-      const u = JSON.parse(raw) as Usuario;
-      // Los datos de demostración viven en memoria: solo se restaura una sesión de cuentas semilla activas.
-      const c = this._cuentas().find((x) => x.id === u.id);
-      return c && c.activa ? u : null;
+      if (!raw || !sessionStorage.getItem(CLAVE_TOKEN)) return null;
+      return JSON.parse(raw) as Usuario;
     } catch {
       return null;
     }

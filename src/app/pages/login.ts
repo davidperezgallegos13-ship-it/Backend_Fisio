@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { DataService } from '../core/data.service';
 import { ToastService } from '../core/toast.service';
-import { validarCedula } from '../core/util';
+import { requisitosClave, validarCedula } from '../core/util';
 import { Icon } from '../ui/icon';
 import { Goniometro } from '../ui/gauge';
 
@@ -115,6 +115,42 @@ import { Goniometro } from '../ui/gauge';
       text-align: center;
       color: var(--suave);
     }
+    .beneficios {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--suave);
+    }
+    .beneficios li {
+      padding-left: 1.1rem;
+      position: relative;
+    }
+    .beneficios li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--ambar);
+    }
+    .reglas {
+      list-style: none;
+      padding: 0;
+      margin: 0.25rem 0 0;
+      display: grid;
+      gap: 0.2rem;
+      font-size: 0.82rem;
+      color: var(--suave);
+    }
+    .reglas li.ok {
+      color: #13706c;
+      font-weight: 600;
+    }
     .cambio a {
       font-weight: 600;
     }
@@ -156,6 +192,11 @@ import { Goniometro } from '../ui/gauge';
             <h1>Crea tu cuenta</h1>
             <p class="sub">Para agendar citas y ver tus sesiones. Solo toma un minuto.</p>
           </div>
+          <ul class="beneficios">
+            <li><strong>Agenda en línea:</strong> reserva y reprograma tus citas sin llamar.</li>
+            <li><strong>Tus sesiones:</strong> consulta el saldo y la vigencia de tus paquetes.</li>
+            <li><strong>Datos protegidos:</strong> tratamos tu información según la LOPDP.</li>
+          </ul>
           <form (submit)="registrar($event)" novalidate>
             <div class="campo">
               <label for="r-nombre">Nombres y apellidos</label>
@@ -181,11 +222,16 @@ import { Goniometro } from '../ui/gauge';
             <div class="campo">
               <label for="r-correo">Correo electrónico</label>
               <input id="r-correo" name="correo" type="email" autocomplete="email" [value]="rCorreo()" (input)="rCorreo.set($any($event.target).value)" />
+              <span class="ayuda">Acepta Gmail, Outlook, Hotmail, Yahoo o iCloud.</span>
             </div>
             <div class="campo">
               <label for="r-clave">Contraseña</label>
               <input id="r-clave" name="clave" type="password" autocomplete="new-password" [value]="rClave()" (input)="rClave.set($any($event.target).value)" />
-              <span class="ayuda">Mínimo 12 caracteres. Puedes usar una frase fácil de recordar.</span>
+              <ul class="reglas">
+                @for (r of reglas(); track r.texto) {
+                  <li [class.ok]="r.ok">{{ r.ok ? '✓' : '○' }} {{ r.texto }}</li>
+                }
+              </ul>
             </div>
             <div class="campo">
               <label for="r-clave2">Repite la contraseña</label>
@@ -204,7 +250,7 @@ import { Goniometro } from '../ui/gauge';
             <button class="btn btn-primario btn-bloque" type="submit">Crear cuenta</button>
           </form>
           <p class="cambio">¿Ya tienes cuenta? <a routerLink="/ingresar">Ingresa</a></p>
-        } @else if (!auth.pendiente()) {
+        } @else if (!auth.usuarioPendiente()) {
           <div>
             <h1>Ingresa a tu cuenta</h1>
             <p class="sub">Usa tu cédula o tu correo.</p>
@@ -279,35 +325,31 @@ export class Login {
   protected readonly rClave2 = signal('');
   protected readonly rConsent = signal(false);
   protected readonly cedulaOk = computed(() => validarCedula(this.rCedula()));
+  protected readonly reglas = computed(() => requisitosClave(this.rClave()));
 
-  protected entrar(ev: Event): void {
+  protected async entrar(ev: Event): Promise<void> {
     ev.preventDefault();
-    const e = this.auth.iniciar(this.id(), this.clave());
+    const e = await this.auth.iniciarApi(this.id(), this.clave());
     this.error.set(e);
-    // El paciente entra sin segundo factor: la sesión ya quedó abierta.
-    if (!e && this.auth.usuario()) {
-      this.data.log('Inicio de sesión', 'Paciente');
-      void this.router.navigateByUrl('/');
-    }
+    if (!e && this.auth.usuario()) void this.router.navigateByUrl('/');
   }
 
   protected verificar(ev: Event): void {
     ev.preventDefault();
-    if (this.auth.verificar(this.codigo())) {
-      this.data.log('Inicio de sesión', 'Verificación en dos pasos completada');
+    if (this.auth.verificarApi(this.codigo())) {
       void this.router.navigateByUrl('/');
     } else {
       this.error.set('El código no es correcto o ya venció. Pide uno nuevo en tu aplicación.');
     }
   }
 
-  protected registrar(ev: Event): void {
+  protected async registrar(ev: Event): Promise<void> {
     ev.preventDefault();
     if (this.rClave() !== this.rClave2()) {
       this.error.set('Las contraseñas no coinciden.');
       return;
     }
-    const e = this.data.registrarse({
+    const e = await this.auth.registrarApi({
       nombre: this.rNombre(),
       cedula: this.rCedula(),
       correo: this.rCorreo(),
@@ -319,14 +361,12 @@ export class Login {
       this.error.set(e);
       return;
     }
-    const p = this.data.pacientes().find((x) => x.cedula === this.rCedula());
-    if (p) this.auth.entrarComoPaciente(p.id);
     this.toast.ok('Cuenta creada. Ya puedes agendar tu primera cita.');
     void this.router.navigateByUrl('/');
   }
 
   protected volver(): void {
-    this.auth.cancelarVerificacion();
+    this.auth.cancelarVerificacionApi();
     this.codigo.set('');
     this.error.set(null);
   }

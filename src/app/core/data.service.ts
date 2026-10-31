@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { AuthService } from './auth.service';
-import { addDays, ahoraHM, cedulaFicticia, hoy, horasDia, horasHasta, validarCedula } from './util';
+import { addDays, ahoraHM, cedulaFicticia, correoPermitido, hoy, horasDia, horasHasta, validarCedula } from './util';
 
 export type Estado = 'Pendiente' | 'Confirmada' | 'Atendida' | 'Cancelada' | 'No asistió';
 export type Metodo = 'Efectivo' | 'Transferencia' | 'Depósito';
@@ -265,7 +265,7 @@ export class DataService {
     if (d.nombre.trim().length < 5) return 'Escribe el nombre completo.';
     if (!validarCedula(d.cedula)) return 'La cédula no es válida. Revisa los 10 dígitos.';
     if (this.pacientes().some((p) => p.cedula === d.cedula)) return 'Ya existe un paciente con esa cédula.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.correo)) return 'Escribe un correo válido.';
+    if (!correoPermitido(d.correo)) return 'Usa un correo de Gmail, Outlook, Hotmail, Yahoo o iCloud.';
     if (this.pacientes().some((p) => p.correo.toLowerCase() === d.correo.toLowerCase())) return 'Ya existe un paciente con ese correo.';
     if (!/^\d{9,10}$/.test(d.telefono)) return 'El teléfono debe tener 9 o 10 dígitos.';
     if (!d.consentimiento) return 'Sin el consentimiento de tratamiento de datos no se puede completar el registro.';

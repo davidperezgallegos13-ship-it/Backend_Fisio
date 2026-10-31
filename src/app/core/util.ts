@@ -134,3 +134,14 @@ export function correoPermitido(correo: string, extra: string[] = []): boolean {
   const dominio = c.split('@')[1];
   return [...DOMINIOS_PERMITIDOS, ...extra].includes(dominio);
 }
+
+/** Requisitos de una contraseña segura. */
+export function requisitosClave(clave: string): { texto: string; ok: boolean }[] {
+  return [
+    { texto: 'Mínimo 12 caracteres', ok: clave.length >= 12 },
+    { texto: 'Una letra mayúscula', ok: /[A-Z]/.test(clave) },
+    { texto: 'Una letra minúscula', ok: /[a-z]/.test(clave) },
+    { texto: 'Un número', ok: /\d/.test(clave) },
+    { texto: 'Un símbolo (! @ # $ % & *)', ok: /[^A-Za-z0-9\s]/.test(clave) },
+  ];
+}
