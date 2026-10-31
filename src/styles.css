@@ -1,1 +1,532 @@
-/* You can add global styles to this file, and also import other style files */
+/* FisioNova · sistema de diseño
+   Idea: el goniómetro (instrumento con que el fisioterapeuta mide el arco de movimiento)
+   es el motivo gráfico. Tinta verde oscura, abeto como color de acción, ámbar como "aguja". */
+
+:root {
+  --tinta: #0f2a2e;
+  --tinta-2: #17373c;
+  --tinta-3: #24484e;
+  --abeto: #13706c;
+  --abeto-oscuro: #0d5754;
+  --abeto-claro: #dcefeb;
+  --ambar: #e8a02a;
+  --ambar-oscuro: #9a6206;
+  --ambar-claro: #fbf0d9;
+  --papel: #f3f5f4;
+  --superficie: #ffffff;
+  --linea: #dde4e2;
+  --linea-fuerte: #c3cecb;
+  --texto: #14272b;
+  --suave: #566b6f;
+  --rojo: #b73a33;
+  --rojo-claro: #fae6e3;
+  --azul: #2756b3;
+  --azul-claro: #e3ebfa;
+  --verde: #2a7d4f;
+  --verde-claro: #dff2e6;
+  --gris-claro: #e8ecea;
+
+  --fuente-titulo: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --fuente: 'Hanken Grotesk', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --radio: 10px;
+  --radio-sm: 7px;
+  --sombra: 0 1px 2px rgba(15, 42, 46, 0.06), 0 8px 24px -12px rgba(15, 42, 46, 0.18);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--fuente);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--texto);
+  background: var(--papel);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fuente-titulo);
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+h1 {
+  font-size: 1.9rem;
+}
+h2 {
+  font-size: 1.2rem;
+}
+h3 {
+  font-size: 1rem;
+}
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--abeto);
+}
+
+:focus-visible {
+  outline: 3px solid var(--ambar);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- botones ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0 1rem;
+  border-radius: var(--radio-sm);
+  border: 1px solid var(--linea-fuerte);
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.05s;
+}
+.btn:hover {
+  background: var(--gris-claro);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primario {
+  background: var(--abeto);
+  border-color: var(--abeto);
+  color: #fff;
+}
+.btn-primario:hover {
+  background: var(--abeto-oscuro);
+  border-color: var(--abeto-oscuro);
+}
+.btn-peligro {
+  color: var(--rojo);
+  border-color: #e3b9b5;
+}
+.btn-peligro:hover {
+  background: var(--rojo-claro);
+}
+.btn-sm {
+  min-height: 32px;
+  padding: 0 0.7rem;
+  font-size: 0.85rem;
+}
+.btn-bloque {
+  width: 100%;
+}
+.btn-icono {
+  width: 36px;
+  min-height: 36px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: var(--radio-sm);
+  cursor: pointer;
+  color: var(--suave);
+}
+.btn-icono:hover {
+  background: var(--gris-claro);
+  color: var(--texto);
+}
+
+/* ---------- formularios ---------- */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.campo > label,
+.campo > .etiqueta {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+.campo input,
+.campo select {
+  min-height: 42px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-sm);
+  background: var(--superficie);
+  width: 100%;
+}
+.campo input:hover,
+.campo select:hover {
+  border-color: var(--suave);
+}
+.campo input:focus,
+.campo select:focus {
+  outline: 3px solid var(--abeto-claro);
+  border-color: var(--abeto);
+}
+.campo .ayuda {
+  font-size: 0.82rem;
+  color: var(--suave);
+}
+.campo .error {
+  font-size: 0.82rem;
+  color: var(--rojo);
+}
+.campo .ok {
+  font-size: 0.82rem;
+  color: var(--verde);
+}
+.rejilla-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.casilla {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.9rem;
+}
+.casilla input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--abeto);
+  flex: none;
+}
+
+.alerta {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radio-sm);
+  font-size: 0.9rem;
+  background: var(--rojo-claro);
+  color: #7d221d;
+}
+.alerta-info {
+  background: var(--azul-claro);
+  color: #1b3d80;
+}
+
+/* ---------- estructura de página ---------- */
+.pagina {
+  padding: 2rem clamp(1rem, 3vw, 2.5rem) 3rem;
+  max-width: 1320px;
+}
+.pagina-cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+.pagina-cabecera p {
+  color: var(--suave);
+  margin-top: 0.35rem;
+}
+.acciones {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.panel {
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+}
+.panel-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--linea);
+}
+.vacio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--suave);
+}
+.vacio strong {
+  display: block;
+  color: var(--texto);
+  margin-bottom: 0.25rem;
+}
+
+/* ---------- tablas ---------- */
+.tabla-envoltura {
+  overflow-x: auto;
+}
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.tabla th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--suave);
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid var(--linea);
+  background: #f8faf9;
+  white-space: nowrap;
+}
+.tabla td {
+  padding: 0.8rem 1.25rem;
+  border-bottom: 1px solid var(--linea);
+  vertical-align: middle;
+}
+.tabla tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tabla tbody tr.clic {
+  cursor: pointer;
+}
+.tabla tbody tr.clic:hover {
+  background: #f6faf9;
+}
+.tabla .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.secundario {
+  color: var(--suave);
+  font-size: 0.85rem;
+}
+
+/* ---------- chips de estado ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--gris-claro);
+  color: var(--suave);
+}
+.chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.chip.pendiente {
+  background: var(--ambar-claro);
+  color: var(--ambar-oscuro);
+}
+.chip.confirmada {
+  background: var(--azul-claro);
+  color: var(--azul);
+}
+.chip.atendida {
+  background: var(--verde-claro);
+  color: var(--verde);
+}
+.chip.cancelada {
+  background: var(--gris-claro);
+  color: var(--suave);
+}
+.chip.no-asistio {
+  background: var(--rojo-claro);
+  color: var(--rojo);
+}
+
+/* ---------- barra de progreso y textos de apoyo ---------- */
+.progreso {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--gris-claro);
+  overflow: hidden;
+  margin: 0.6rem 0 0.4rem;
+}
+.progreso span {
+  display: block;
+  height: 100%;
+  background: var(--abeto);
+}
+.progreso.bajo span {
+  background: var(--ambar);
+}
+.nota {
+  font-size: 0.85rem;
+  color: var(--suave);
+}
+.nombre {
+  font-weight: 600;
+}
+
+/* ---------- ventana modal ---------- */
+.velo {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 42, 46, 0.55);
+  z-index: 40;
+  animation: aparecer 0.15s ease-out;
+}
+.dialogo {
+  position: fixed;
+  z-index: 41;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  background: var(--superficie);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px -20px rgba(15, 42, 46, 0.5);
+  animation: subir 0.18s ease-out;
+}
+.dialogo-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.25rem 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--linea);
+}
+.dialogo-cuerpo {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.dialogo-pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
+.panel-lateral {
+  position: fixed;
+  z-index: 41;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(440px, 100vw);
+  background: var(--superficie);
+  box-shadow: -24px 0 60px -30px rgba(15, 42, 46, 0.5);
+  overflow: auto;
+  animation: deslizar 0.2s ease-out;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%);
+  }
+}
+@keyframes deslizar {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+/* ---------- aviso flotante ---------- */
+.aviso {
+  position: fixed;
+  z-index: 60;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radio-sm);
+  background: var(--tinta);
+  color: #fff;
+  box-shadow: var(--sombra);
+  font-weight: 500;
+  max-width: calc(100vw - 2rem);
+}
+.aviso.error {
+  background: var(--rojo);
+}
+
+@media (max-width: 640px) {
+  .rejilla-2 {
+    grid-template-columns: 1fr;
+  }
+  h1 {
+    font-size: 1.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- impresión / PDF ---------- */
+@media print {
+  body {
+    background: #fff;
+  }
+  .no-imprimir {
+    display: none !important;
+  }
+  .pagina {
+    padding: 0;
+    max-width: none;
+  }
+  .panel {
+    border: 0;
+  }
+}
